@@ -29,9 +29,6 @@ func LoggerFromContext(ctx context.Context) *slog.Logger {
 // With adds one or more key–value pairs to the logger stored in the context.
 // Use it when you want subsequent log calls to automatically include those attributes.
 func With(r *http.Request, attrs ...any) *http.Request {
-	// ctx := With(r.Context(), attrs...)
-	// return r.WithContext(ctx)
-
 	ctx := r.Context()
 	logger := LoggerFromContext(ctx).With(attrs...)
 	ctx = ContextWithLogger(ctx, logger)
