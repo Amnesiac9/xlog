@@ -15,6 +15,8 @@ import (
 type ctxLoggerKey struct{}
 
 // Return the context with the logger added with the logger key.
+// Inteded to then be stored in the request, which can then be retrieved automatically or manually.
+// Helpers included in this package automatically retrieve this logger when called.
 func ToContext(ctx context.Context, logger *slog.Logger) context.Context {
 	return context.WithValue(ctx, ctxLoggerKey{}, logger)
 }
@@ -45,22 +47,22 @@ func With(c echo.Context, attrs ...any) echo.Context {
 // Public helpers (call these directly in handlers)
 // ---------------------------------------------------------------------
 
-func Debug(c echo.Context, msg string, args ...any) {
+func Debug(c echo.Context, msg string, args []slog.Attr) {
 	ctx := c.Request().Context()
-	FromContext(ctx).InfoContext(ctx, msg, args...)
+	FromContext(ctx).LogAttrs(ctx, slog.LevelDebug, msg, args...)
 }
 
-func Info(c echo.Context, msg string, args ...any) {
+func Info(c echo.Context, msg string, args []slog.Attr) {
 	ctx := c.Request().Context()
-	FromContext(ctx).InfoContext(ctx, msg, args...)
+	FromContext(ctx).LogAttrs(ctx, slog.LevelInfo, msg, args...)
 }
 
-func Warn(c echo.Context, msg string, args ...any) {
+func Warn(c echo.Context, msg string, args []slog.Attr) {
 	ctx := c.Request().Context()
-	FromContext(ctx).WarnContext(ctx, msg, args...)
+	FromContext(ctx).LogAttrs(ctx, slog.LevelWarn, msg, args...)
 }
 
-func Error(c echo.Context, msg string, err error, args ...any) {
+func Error(c echo.Context, msg string, err error, args []slog.Attr) {
 	ctx := c.Request().Context()
-	FromContext(ctx).ErrorContext(ctx, msg, append(args, slog.String("error", err.Error()))...)
+	FromContext(ctx).LogAttrs(ctx, slog.LevelError, msg, append(args, slog.String("error", err.Error()))...)
 }

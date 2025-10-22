@@ -1,6 +1,6 @@
 # XLOG
 
-Xlog is a lightweight logging package built on top of slog and echo.
+Xlog is a lightweight logging package built on top of slog and echo for context aware logging.
 
 Note: This package is not intended for production use. It’s designed for educational purposes and internal tooling.
 
