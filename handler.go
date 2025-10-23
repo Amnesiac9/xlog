@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 )
 
 type XlogHandler struct {
@@ -104,6 +105,15 @@ func DefaultPerRequestArgs(ctx context.Context) []slog.Attr {
 		r = append(r, slog.String(string(CtxURIPathKey), fmt.Sprint(v)))
 	}
 	return r
+}
+
+func DefaultReplaceAttr(groups []string, a slog.Attr) slog.Attr {
+	if a.Key == slog.LevelKey {
+		// Convert the level value to a string and then to lowercase
+		level := a.Value.Any().(slog.Level)
+		a.Value = slog.StringValue(strings.ToLower(level.String()))
+	}
+	return a
 }
 
 // ContextHandler is a slog.Handler middleware that adds attributes from context.
