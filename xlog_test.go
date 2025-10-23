@@ -104,10 +104,10 @@ func Test_XlogHandler_WithAttrsIsPreserved(t *testing.T) {
 
 	base := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
 	// Add a static attr via WithAttrs and ensure XlogHandler preserves it
-	h := NewHandler(base.WithAttrs([]slog.Attr{slog.String("app", "marsbytes-api")}), DefaultPerRequestArgs)
+	h := NewHandler(base.WithAttrs([]slog.Attr{slog.String("app", "test-api")}), DefaultPerRequestArgs)
 	logger := slog.New(h)
 
-	ctx := context.WithValue(context.Background(), CtxTenantKey, "egyptian-thread-company")
+	ctx := context.WithValue(context.Background(), CtxTenantKey, "test-tenant")
 	logger.InfoContext(ctx, "ping")
 
 	var rec map[string]any
@@ -115,10 +115,10 @@ func Test_XlogHandler_WithAttrsIsPreserved(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 
-	if rec["app"] != "marsbytes-api" {
-		t.Errorf("expected app=marsbytes-api, got %v", rec["app"])
+	if rec["app"] != "test-api" {
+		t.Errorf("expected app=test-api, got %v", rec["app"])
 	}
-	if rec["tenant"] != "egyptian-thread-company" {
-		t.Errorf("expected tenant=egyptian-thread-company, got %v", rec["tenant"])
+	if rec["tenant"] != "test-tenant" {
+		t.Errorf("expected tenant=test-tenant, got %v", rec["tenant"])
 	}
 }
