@@ -34,17 +34,17 @@ func (m *MultiHandler) Handle(ctx context.Context, r slog.Record) error {
 }
 
 func (m *MultiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	news := make([]slog.Handler, len(m.handlers))
+	nh := make([]slog.Handler, len(m.handlers))
 	for i, h := range m.handlers {
-		news[i] = h.WithAttrs(attrs)
+		nh[i] = h.WithAttrs(attrs)
 	}
-	return &MultiHandler{handlers: news}
+	return &MultiHandler{handlers: nh}
 }
 
 func (m *MultiHandler) WithGroup(name string) slog.Handler {
-	news := make([]slog.Handler, len(m.handlers))
+	nh := make([]slog.Handler, len(m.handlers))
 	for i, h := range m.handlers {
-		news[i] = h.WithGroup(name)
+		nh[i] = h.WithGroup(name)
 	}
-	return &MultiHandler{handlers: news}
+	return &MultiHandler{handlers: nh}
 }
