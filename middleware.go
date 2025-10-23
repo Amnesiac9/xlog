@@ -57,7 +57,7 @@ func MiddlewareAttachDefaultsCtx(logger *slog.Logger) echo.MiddlewareFunc {
 }
 
 // Per request final log for echo
-func MiddlewareRequestLoggerSlog(logger *slog.Logger) echo.MiddlewareFunc {
+func MiddlewareRequestLoggerSlog() echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:    true,
 		LogURI:       true,
@@ -72,6 +72,8 @@ func MiddlewareRequestLoggerSlog(logger *slog.Logger) echo.MiddlewareFunc {
 				slog.Int("status", v.Status),
 				slog.Int64("duration_ms", v.Latency.Milliseconds()),
 			}
+
+			logger := FromContext(c.Request().Context())
 
 			if v.Error == nil {
 				logger.LogAttrs(c.Request().Context(), slog.LevelInfo, "REQUEST", attrs...)
