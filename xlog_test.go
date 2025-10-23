@@ -6,21 +6,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
-	"strings"
 	"testing"
 )
 
 func Test_LoggingLevels(t *testing.T) {
 	stdoutHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.LevelKey {
-				// Convert the level value to a string and then to lowercase
-				level := a.Value.Any().(slog.Level)
-				a.Value = slog.StringValue(strings.ToLower(level.String()))
-			}
-			return a
-		},
+		Level:       slog.LevelDebug,
+		ReplaceAttr: DefaultReplaceAttr,
 	})
 
 	ctxHandler := NewHandler(stdoutHandler, DefaultPerRequestArgs)
