@@ -23,7 +23,7 @@ func Test_LoggingLevels(t *testing.T) {
 		},
 	})
 
-	ctxHandler := NewXlogHandler(stdoutHandler, DefaultPerRequestArgs)
+	ctxHandler := NewHandler(stdoutHandler, DefaultPerRequestArgs)
 
 	logger := slog.New(ctxHandler)
 	slog.SetDefault(logger)
@@ -45,7 +45,7 @@ func newTestLogger(w *bytes.Buffer) *slog.Logger {
 		Level: slog.LevelDebug,
 		// If you use ReplaceAttr/AddSource in prod, you can include them here too.
 	})
-	return slog.New(NewXlogHandler(h, DefaultPerRequestArgs))
+	return slog.New(NewHandler(h, DefaultPerRequestArgs))
 }
 
 func Test_XlogHandler_DefaultsAppear(t *testing.T) {
@@ -112,7 +112,7 @@ func Test_XlogHandler_WithAttrsIsPreserved(t *testing.T) {
 
 	base := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
 	// Add a static attr via WithAttrs and ensure XlogHandler preserves it
-	h := NewXlogHandler(base.WithAttrs([]slog.Attr{slog.String("app", "marsbytes-api")}), DefaultPerRequestArgs)
+	h := NewHandler(base.WithAttrs([]slog.Attr{slog.String("app", "marsbytes-api")}), DefaultPerRequestArgs)
 	logger := slog.New(h)
 
 	ctx := context.WithValue(context.Background(), CtxTenantKey, "egyptian-thread-company")

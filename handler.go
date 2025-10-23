@@ -13,7 +13,7 @@ type XlogHandler struct {
 	attrFromContext []func(context.Context) []slog.Attr
 }
 
-func NewXlogHandler(handler slog.Handler, attrFromContextFuncs ...func(context.Context) []slog.Attr) *XlogHandler {
+func NewHandler(handler slog.Handler, attrFromContextFuncs ...func(context.Context) []slog.Attr) *XlogHandler {
 	return &XlogHandler{
 		handler,
 		attrFromContextFuncs,
