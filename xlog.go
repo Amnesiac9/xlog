@@ -47,22 +47,22 @@ func With(c echo.Context, attrs ...any) echo.Context {
 // Public helpers (call these directly in handlers)
 // ---------------------------------------------------------------------
 
-func Debug(c echo.Context, msg string, args []slog.Attr) {
+func Debug(c echo.Context, msg string, args ...any) {
 	ctx := c.Request().Context()
-	FromContext(ctx).LogAttrs(ctx, slog.LevelDebug, msg, args...)
+	FromContext(ctx).InfoContext(ctx, msg, args...)
 }
 
-func Info(c echo.Context, msg string, args []slog.Attr) {
+func Info(c echo.Context, msg string, args ...any) {
 	ctx := c.Request().Context()
-	FromContext(ctx).LogAttrs(ctx, slog.LevelInfo, msg, args...)
+	FromContext(ctx).InfoContext(ctx, msg, args...)
 }
 
-func Warn(c echo.Context, msg string, args []slog.Attr) {
+func Warn(c echo.Context, msg string, args ...any) {
 	ctx := c.Request().Context()
-	FromContext(ctx).LogAttrs(ctx, slog.LevelWarn, msg, args...)
+	FromContext(ctx).WarnContext(ctx, msg, args...)
 }
 
-func Error(c echo.Context, msg string, err error, args []slog.Attr) {
+func Error(c echo.Context, msg string, err error, args ...any) {
 	ctx := c.Request().Context()
-	FromContext(ctx).LogAttrs(ctx, slog.LevelError, msg, append(args, slog.String("error", err.Error()))...)
+	FromContext(ctx).ErrorContext(ctx, msg, append(args, slog.String("error", err.Error()))...)
 }
