@@ -2,102 +2,66 @@ package xlog
 
 import (
 	"context"
-	"encoding/json"
-	"io"
+	"fmt"
 	"log/slog"
-	"time"
 )
 
 type XlogHandler struct {
-	option Option
-	attrs  []slog.Attr
-	groups []string
+	handler slog.Handler
+
+	// function to add specific attributes/fields from a given context
+	attrFromContext []func(context.Context) []slog.Attr
 }
 
-type Option struct {
-	// log level (default: debug)
-	Level slog.Leveler
-
-	// default: 10s
-	Timeout time.Duration
-
-	// output (default: os.Stdout)
-	Writer io.Writer
-
-	// optional: custom marshaler
-	Marshaler func(v any) ([]byte, error)
-	// optional: fetch attributes from context
-	AttrFromContext []func(ctx context.Context) []slog.Attr
-
-	// optional: see slog.HandlerOptions
-	AddSource   bool
-	ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
-}
-
-func (o Option) NewXlogHandler() slog.Handler {
-	if o.Level == nil {
-		o.Level = slog.LevelDebug
-	}
-
-	if o.Timeout == 0 {
-		o.Timeout = 10 * time.Second
-	}
-
-	if o.Marshaler == nil {
-		o.Marshaler = json.Marshal
-	}
-
-	if o.AttrFromContext == nil {
-		o.AttrFromContext = []func(ctx context.Context) []slog.Attr{}
-	}
-
+func NewXlogHandler(handler slog.Handler, attrFromContextFuncs ...func(context.Context) []slog.Attr) *XlogHandler {
 	return &XlogHandler{
-		option: o,
-		attrs:  []slog.Attr{},
-		groups: []string{},
+		handler,
+		attrFromContextFuncs,
 	}
 }
 
 var _ slog.Handler = (*XlogHandler)(nil)
 
-func (h *XlogHandler) Enabled(_ context.Context, level slog.Level) bool {
-	return level >= h.option.Level.Level()
+func (h *XlogHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.handler.Enabled(ctx, level)
 }
 
-func (h *XlogHandler) Handle(ctx context.Context, record slog.Record) error {
-	fromContext := ContextExtractor(ctx, h.option.AttrFromContext)
-	attrs := append(h.attrs, fromContext...)
+func (h *XlogHandler) Handle(ctx context.Context, rec slog.Record) error {
+	// Create a new record so we can safely append attrs
+	nr := slog.NewRecord(rec.Time, rec.Level, rec.Message, rec.PC)
 
-	return nil
+	// 1) original record attrs
+	rec.Attrs(func(a slog.Attr) bool {
+		nr.AddAttrs(a)
+		return true
+	})
+
+	// 2) attrs extracted from context
+	for _, fn := range h.attrFromContext {
+		if fn == nil {
+			continue
+		}
+		for _, a := range fn(ctx) {
+			nr.AddAttrs(a)
+		}
+	}
+
+	// Pass through to the wrapped handler; ReplaceAttr/AddSource apply there.
+	return h.handler.Handle(ctx, nr)
 }
 
 func (h *XlogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &XlogHandler{
-		option: h.option,
-		attrs:  append(h.attrs, attrs...),
-		groups: h.groups,
+		handler:         h.handler.WithAttrs(attrs),
+		attrFromContext: h.attrFromContext,
 	}
 }
 
 func (h *XlogHandler) WithGroup(name string) slog.Handler {
-	// https://cs.opensource.google/go/x/exp/+/46b07846:slog/handler.go;l=247
-	if name == "" {
-		return h
-	}
-
 	return &XlogHandler{
-		option: h.option,
-		attrs:  h.attrs,
-		groups: append(h.groups, name),
+		handler:         h.handler.WithGroup(name),
+		attrFromContext: h.attrFromContext,
 	}
-}
-
-func ContextExtractor(ctx context.Context, fns []func(ctx context.Context) []slog.Attr) []slog.Attr {
-	attrs := []slog.Attr{}
-	for _, fn := range fns {
-		attrs = append(attrs, fn(ctx)...)
-	}
-	return attrs
 }
 
 func ExtractFromContext(keys ...any) func(ctx context.Context) []slog.Attr {
@@ -124,6 +88,24 @@ const (
 	CtxURIKey     ctxKey = "uri"
 )
 
+func DefaultPerRequestArgs(ctx context.Context) []slog.Attr {
+	// Add global context attrs to log here.
+	r := []slog.Attr{}
+	if v := ctx.Value(CtxTenantKey); v != nil {
+		r = append(r, slog.String(string(CtxTenantKey), fmt.Sprint(v)))
+	}
+	if v := ctx.Value(CtxReqIDKey); v != nil {
+		r = append(r, slog.String(string(CtxReqIDKey), fmt.Sprint(v)))
+	}
+	if v := ctx.Value(CtxMethodKey); v != nil {
+		r = append(r, slog.String(string(CtxMethodKey), fmt.Sprint(v)))
+	}
+	if v := ctx.Value(CtxURIPathKey); v != nil {
+		r = append(r, slog.String(string(CtxURIPathKey), fmt.Sprint(v)))
+	}
+	return r
+}
+
 // ContextHandler is a slog.Handler middleware that adds attributes from context.
 // type ContextHandler struct {
 // 	slog.Handler
@@ -141,22 +123,4 @@ const (
 
 // 	// Now pass to the next handler in the chain
 // 	return h.Handler.Handle(ctx, r)
-// }
-
-// func defaultRequestArgs(ctx context.Context) []slog.Attr {
-// 	// Add global context attrs to log here.
-// 	r := []slog.Attr{}
-// 	if v := ctx.Value(CtxTenantKey); v != nil {
-// 		r = append(r, slog.String(string(CtxTenantKey), fmt.Sprint(v)))
-// 	}
-// 	if v := ctx.Value(CtxReqIDKey); v != nil {
-// 		r = append(r, slog.String(string(CtxReqIDKey), fmt.Sprint(v)))
-// 	}
-// 	if v := ctx.Value(CtxMethodKey); v != nil {
-// 		r = append(r, slog.String(string(CtxMethodKey), fmt.Sprint(v)))
-// 	}
-// 	if v := ctx.Value(CtxURIPathKey); v != nil {
-// 		r = append(r, slog.String(string(CtxURIPathKey), fmt.Sprint(v)))
-// 	}
-// 	return r
 // }
