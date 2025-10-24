@@ -2,9 +2,7 @@ package xlog
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
-	"strings"
 )
 
 type XlogHandler struct {
@@ -65,16 +63,16 @@ func (h *XlogHandler) WithGroup(name string) slog.Handler {
 	}
 }
 
-// Returns a func that extracts any given keys from the context
-func ExtractFromContext(keys ...any) func(ctx context.Context) []slog.Attr {
-	return func(ctx context.Context) []slog.Attr {
-		attrs := make([]slog.Attr, 0, len(keys))
-		for _, key := range keys {
-			attrs = append(attrs, slog.Any(key.(string), ctx.Value(key)))
-		}
-		return attrs
-	}
-}
+// // Returns a func that extracts any given keys from the context
+// func ExtractFromContext(keys ...any) func(ctx context.Context) []slog.Attr {
+// 	return func(ctx context.Context) []slog.Attr {
+// 		attrs := make([]slog.Attr, 0, len(keys))
+// 		for _, key := range keys {
+// 			attrs = append(attrs, slog.Any(key.(string), ctx.Value(key)))
+// 		}
+// 		return attrs
+// 	}
+// }
 
 // Extract the args slice directly from context
 func ExtractArgsFromContext(ctx context.Context) []slog.Attr {
@@ -85,63 +83,3 @@ func ExtractArgsFromContext(ctx context.Context) []slog.Attr {
 	}
 	return nil
 }
-
-//////////
-
-// ctxKey is unexported to avoid collisions with other packages.
-type ctxKey string
-
-const (
-	CtxTenantKey  ctxKey = "tenant"
-	CtxReqIDKey   ctxKey = "request_id"
-	CtxUserKey    ctxKey = "user" // optional: add whatever you like
-	CtxMethodKey  ctxKey = "method"
-	CtxURIPathKey ctxKey = "path"
-	CtxURIKey     ctxKey = "uri"
-)
-
-func DefaultPerRequestArgs(ctx context.Context) []slog.Attr {
-	// Add global context attrs to log here.
-	r := []slog.Attr{}
-	if v := ctx.Value(CtxTenantKey); v != nil {
-		r = append(r, slog.String(string(CtxTenantKey), fmt.Sprint(v)))
-	}
-	if v := ctx.Value(CtxReqIDKey); v != nil {
-		r = append(r, slog.String(string(CtxReqIDKey), fmt.Sprint(v)))
-	}
-	if v := ctx.Value(CtxMethodKey); v != nil {
-		r = append(r, slog.String(string(CtxMethodKey), fmt.Sprint(v)))
-	}
-	if v := ctx.Value(CtxURIPathKey); v != nil {
-		r = append(r, slog.String(string(CtxURIPathKey), fmt.Sprint(v)))
-	}
-	return r
-}
-
-func DefaultReplaceAttr(groups []string, a slog.Attr) slog.Attr {
-	if a.Key == slog.LevelKey {
-		// Convert the level value to a string and then to lowercase
-		level := a.Value.Any().(slog.Level)
-		a.Value = slog.StringValue(strings.ToLower(level.String()))
-	}
-	return a
-}
-
-// ContextHandler is a slog.Handler middleware that adds attributes from context.
-// type ContextHandler struct {
-// 	slog.Handler
-// }
-
-// Handle implements slog.Handler.
-// func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
-// 	// Add attributes from context
-// 	if sessionID, ok := ctx.Value(SessionIDKey).(string); ok {
-// 		r.Add(slog.String(string(SessionIDKey), sessionID))
-// 	}
-// 	if requestID, ok := ctx.Value(RequestIDKey).(string); ok {
-// 		r.Add(slog.String(string(RequestIDKey), requestID))
-// 	}
-
-// 	// Now pass to the next handler in the chain
-// 	return h.Handler.Handle(ctx, r)
-// }

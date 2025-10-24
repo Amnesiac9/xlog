@@ -2,7 +2,6 @@ package xlog
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log/slog"
 	"testing"
@@ -135,24 +134,24 @@ func BenchmarkAttrsSliceInContext_XlogHandler(b *testing.B) {
 // 	}
 // }
 
-// Small, allocation-free itoa for sub-benchmark names
-func itoa(i int) string {
-	// fast path for small sets we use above
-	switch i {
-	case 4:
-		return "4"
-	case 8:
-		return "8"
-	case 16:
-		return "16"
-	case 32:
-		return "32"
-	default:
-		return fmtInt(i)
-	}
-}
+// // Small, allocation-free itoa for sub-benchmark names
+// func itoa(i int) string {
+// 	// fast path for small sets we use above
+// 	switch i {
+// 	case 4:
+// 		return "4"
+// 	case 8:
+// 		return "8"
+// 	case 16:
+// 		return "16"
+// 	case 32:
+// 		return "32"
+// 	default:
+// 		return fmtInt(i)
+// 	}
+// }
 
-func fmtInt(i int) string {
-	// not performance critical—only for naming the sub-benchmarks
-	return fmt.Sprintf("%d", i)
-}
+// func fmtInt(i int) string {
+// 	// not performance critical—only for naming the sub-benchmarks
+// 	return fmt.Sprintf("%d", i)
+// }

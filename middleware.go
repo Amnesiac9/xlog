@@ -10,7 +10,7 @@ import (
 
 type ctxAttrsKey struct{}
 
-// Request-scoped slog.Logger to the context with attrs.
+// Request-scoped slog.Logger to the context with default per-req attrs.
 //
 // Calling Info on this method: 319.1 ns/op	       0 B/op	       0 allocs/op
 func MiddlewareAttachDefaultsLogger(logger *slog.Logger) echo.MiddlewareFunc {
@@ -21,13 +21,15 @@ func MiddlewareAttachDefaultsLogger(logger *slog.Logger) echo.MiddlewareFunc {
 			req := c.Request()
 			reqID := c.Response().Header().Get(echo.HeaderXRequestID)
 
+			// Create a logger with default values
 			reqLogger := logger.With(
-				slog.String("tenant", tenant),
-				slog.String("method", req.Method),
-				slog.String("uri", req.URL.Path),
-				slog.String("request_id", reqID),
+				slog.String(string(CtxTenantKey), tenant),
+				slog.String(string(CtxMethodKey), req.Method),
+				slog.String(string(CtxURIPathKey), req.URL.Path),
+				slog.String(string(CtxReqIDKey), reqID),
 			)
 
+			// Add the logger to context so that we can call it.
 			ctx := ToContext(req.Context(), reqLogger)
 			c.SetRequest(req.WithContext(ctx))
 
