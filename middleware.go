@@ -8,7 +8,11 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+type ctxAttrsKey struct{}
+
 // Request-scoped slog.Logger to the context with attrs.
+//
+// Calling Info on this method: 319.1 ns/op	       0 B/op	       0 allocs/op
 func MiddlewareAttachDefaultsLogger(logger *slog.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -33,6 +37,8 @@ func MiddlewareAttachDefaultsLogger(logger *slog.Logger) echo.MiddlewareFunc {
 }
 
 // Attach Default Per Request attributes to the context.
+//
+// Benchmark:	       503.3 ns/op	       0 B/op	       0 allocs/op
 func MiddlewareAttachDefaultsCtx(logger *slog.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -42,7 +48,43 @@ func MiddlewareAttachDefaultsCtx(logger *slog.Logger) echo.MiddlewareFunc {
 			reqID := c.Response().Header().Get(echo.HeaderXRequestID)
 
 			// Allows simple slog.InfoContext calls to also return these values rather than requiring the use of xlog.Level() funcs
-			ctx := c.Request().Context()
+			// ctx := c.Request().Context()
+			// ctx = context.WithValue(ctx, CtxTenantKey, tenant)
+			// ctx = context.WithValue(ctx, CtxReqIDKey, reqID)
+			// ctx = context.WithValue(ctx, CtxMethodKey, c.Request().Method)
+			// ctx = context.WithValue(ctx, CtxURIPathKey, c.Request().URL.Path)
+
+			// Create default attrs and store the slice:
+			attrs := []slog.Attr{
+				slog.String(string(CtxTenantKey), tenant),
+				slog.String(string(CtxReqIDKey), reqID),
+				slog.String(string(CtxMethodKey), c.Request().Method),
+				slog.String(string(CtxURIPathKey), c.Request().URL.Path),
+			}
+
+			ctx := context.WithValue(req.Context(), ctxAttrsKey{}, attrs)
+
+			//ctx := ContextWithLogger(req.Context(), reqLogger)
+			c.SetRequest(req.WithContext(ctx))
+
+			return next(c)
+		}
+	}
+}
+
+// Attach Default Per Request attributes to the context.
+//
+//	Calling Info on this method: 793.2 ns/op	     336 B/op	       7 allocs/op
+func MiddlewareAttachDefaultsCtxOld(logger *slog.Logger) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			tenant := GetTenant(c)
+
+			req := c.Request()
+			reqID := c.Response().Header().Get(echo.HeaderXRequestID)
+
+			// Allows simple slog.InfoContext calls to also return these values rather than requiring the use of xlog.Level() funcs
+			ctx := req.Context()
 			ctx = context.WithValue(ctx, CtxTenantKey, tenant)
 			ctx = context.WithValue(ctx, CtxReqIDKey, reqID)
 			ctx = context.WithValue(ctx, CtxMethodKey, c.Request().Method)
@@ -57,6 +99,7 @@ func MiddlewareAttachDefaultsCtx(logger *slog.Logger) echo.MiddlewareFunc {
 }
 
 // Per request final log for echo
+// TODO: Alternative error messages for frontend?
 func MiddlewareRequestLoggerSlog() echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:    true,

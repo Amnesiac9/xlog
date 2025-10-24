@@ -65,6 +65,7 @@ func (h *XlogHandler) WithGroup(name string) slog.Handler {
 	}
 }
 
+// Returns a func that extracts any given keys from the context
 func ExtractFromContext(keys ...any) func(ctx context.Context) []slog.Attr {
 	return func(ctx context.Context) []slog.Attr {
 		attrs := make([]slog.Attr, 0, len(keys))
@@ -73,6 +74,16 @@ func ExtractFromContext(keys ...any) func(ctx context.Context) []slog.Attr {
 		}
 		return attrs
 	}
+}
+
+// Extract the args slice directly from context
+func ExtractArgsFromContext(ctx context.Context) []slog.Attr {
+	if v := ctx.Value(ctxAttrsKey{}); v != nil {
+		if s, ok := v.([]slog.Attr); ok {
+			return s
+		}
+	}
+	return nil
 }
 
 //////////
