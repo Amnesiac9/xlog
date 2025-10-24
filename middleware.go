@@ -112,6 +112,10 @@ func MiddlewareRequestLoggerSlog() echo.MiddlewareFunc {
 		LogRequestID: true,
 		LogMethod:    true,
 		LogLatency:   true,
+		LogHost:      true,
+		LogRemoteIP:  true,
+		LogUserAgent: true,
+		LogReferer:   true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			attrs := []slog.Attr{
 				slog.Int("status", v.Status),
@@ -123,7 +127,14 @@ func MiddlewareRequestLoggerSlog() echo.MiddlewareFunc {
 			if v.Error == nil {
 				logger.LogAttrs(c.Request().Context(), slog.LevelInfo, "REQUEST", attrs...)
 			} else {
-				attrs = append(attrs, slog.String("error", v.Error.Error()))
+				attrs = append(attrs,
+					slog.String("uri", v.URI),
+					slog.String("host", v.Host),
+					slog.String("remote_ip", v.RemoteIP),
+					slog.String("user_agent", v.UserAgent),
+					slog.String("referer", v.Referer),
+					slog.String("error", v.Error.Error()),
+				)
 				logger.LogAttrs(c.Request().Context(), slog.LevelError, "REQUEST_ERROR", attrs...)
 			}
 			return nil
