@@ -3,8 +3,6 @@ package xlog
 import (
 	"context"
 	"log/slog"
-
-	"github.com/labstack/echo/v4"
 )
 
 // ---------------------------------------------------------------------
@@ -30,39 +28,29 @@ func FromContext(ctx context.Context) *slog.Logger {
 }
 
 // With adds one or more key–value pairs to the logger stored in the context,
-// returning a *new* echo.Context whose request.Context carries that enriched logger.
+// returning a *new* Context that carries that enriched logger.
 // Use it when you want subsequent log calls to automatically include those attributes.
-func With(c echo.Context, attrs ...any) echo.Context {
-	ctx := c.Request().Context()
+func With(ctx context.Context, attrs ...any) context.Context {
 	logger := FromContext(ctx).With(attrs...)
-	ctx = ToContext(ctx, logger)
-
-	// Attach the new context back to the request so later handlers/middleware see it.
-	req := c.Request().WithContext(ctx)
-	c.SetRequest(req)
-	return c
+	return ToContext(ctx, logger)
 }
 
 // ---------------------------------------------------------------------
 // Public helpers (call these directly in handlers)
 // ---------------------------------------------------------------------
 
-func Debug(c echo.Context, msg string, args ...any) {
-	ctx := c.Request().Context()
+func Debug(ctx context.Context, msg string, args ...any) {
 	FromContext(ctx).InfoContext(ctx, msg, args...)
 }
 
-func Info(c echo.Context, msg string, args ...any) {
-	ctx := c.Request().Context()
+func Info(ctx context.Context, msg string, args ...any) {
 	FromContext(ctx).InfoContext(ctx, msg, args...)
 }
 
-func Warn(c echo.Context, msg string, args ...any) {
-	ctx := c.Request().Context()
+func Warn(ctx context.Context, msg string, args ...any) {
 	FromContext(ctx).WarnContext(ctx, msg, args...)
 }
 
-func Error(c echo.Context, msg string, err error, args ...any) {
-	ctx := c.Request().Context()
+func Error(ctx context.Context, msg string, err error, args ...any) {
 	FromContext(ctx).ErrorContext(ctx, msg, append(args, slog.String("error", err.Error()))...)
 }
