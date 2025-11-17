@@ -26,7 +26,7 @@ func WithC(c echo.Context, attrs ...any) echo.Context {
 
 func DebugC(c echo.Context, msg string, args ...any) {
 	ctx := c.Request().Context()
-	FromContext(ctx).InfoContext(ctx, msg, args...)
+	FromContext(ctx).DebugContext(ctx, msg, args...)
 }
 
 func InfoC(c echo.Context, msg string, args ...any) {

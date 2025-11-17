@@ -49,13 +49,6 @@ func MiddlewareAttachDefaultsCtx(logger *slog.Logger) echo.MiddlewareFunc {
 			req := c.Request()
 			reqID := c.Response().Header().Get(echo.HeaderXRequestID)
 
-			// Allows simple slog.InfoContext calls to also return these values rather than requiring the use of xlog.Level() funcs
-			// ctx := c.Request().Context()
-			// ctx = context.WithValue(ctx, CtxTenantKey, tenant)
-			// ctx = context.WithValue(ctx, CtxReqIDKey, reqID)
-			// ctx = context.WithValue(ctx, CtxMethodKey, c.Request().Method)
-			// ctx = context.WithValue(ctx, CtxURIPathKey, c.Request().URL.Path)
-
 			// Create default attrs and store the slice:
 			attrs := []slog.Attr{
 				slog.String(string(CtxTenantKey), tenant),
