@@ -113,19 +113,20 @@ func MiddlewareRequestLoggerSlog() echo.MiddlewareFunc {
 			attrs := []slog.Attr{
 				slog.Int("status", v.Status),
 				slog.Int64("duration_ms", v.Latency.Milliseconds()),
+				slog.String("uri", v.URI),
+				slog.String("user_agent", v.UserAgent),
+				slog.String("host", v.Host),
+				slog.String("remote_ip", v.RemoteIP),
+				slog.String("referer", v.Referer),
 			}
 
+			// Pulls the logger from context to include any attached values, such as the request id.
 			logger := FromContext(c.Request().Context())
 
 			if v.Error == nil {
 				logger.LogAttrs(c.Request().Context(), slog.LevelInfo, "REQUEST", attrs...)
 			} else {
 				attrs = append(attrs,
-					slog.String("uri", v.URI),
-					slog.String("host", v.Host),
-					slog.String("remote_ip", v.RemoteIP),
-					slog.String("user_agent", v.UserAgent),
-					slog.String("referer", v.Referer),
 					slog.String("error", v.Error.Error()),
 				)
 				logger.LogAttrs(c.Request().Context(), slog.LevelError, "REQUEST_ERROR", attrs...)
