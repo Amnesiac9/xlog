@@ -99,6 +99,36 @@ func Test_XlogHandler_DefaultsAppear(t *testing.T) {
 	}
 }
 
+func Test_With_DeduplicatesKeys(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	ctx := context.Background()
+	ctx = ToContext(ctx, logger)
+
+	// First With sets tenant
+	ctx = With(ctx, "tenant", "old-value")
+	// Second With updates tenant — should replace, not duplicate
+	ctx = With(ctx, "tenant", "new-value")
+
+	Info(ctx, "test dedup")
+
+	var rec map[string]any
+	if err := json.Unmarshal(bytes.TrimSpace(buf.Bytes()), &rec); err != nil {
+		t.Fatalf("unmarshal: %v\n%s", err, buf.String())
+	}
+
+	if rec["tenant"] != "new-value" {
+		t.Errorf("expected tenant=new-value, got %v", rec["tenant"])
+	}
+
+	// Count how many times "tenant" appears in the raw JSON — should be exactly 1
+	count := bytes.Count(buf.Bytes(), []byte(`"tenant"`))
+	if count != 1 {
+		t.Errorf("expected 1 occurrence of tenant key, got %d\n%s", count, buf.String())
+	}
+}
+
 func Test_XlogHandler_WithAttrsIsPreserved(t *testing.T) {
 	var buf bytes.Buffer
 
