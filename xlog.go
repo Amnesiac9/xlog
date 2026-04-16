@@ -107,7 +107,7 @@ func mergeAttrs(existing, incoming []slog.Attr) []slog.Attr {
 // ---------------------------------------------------------------------
 
 func Debug(ctx context.Context, msg string, args ...any) {
-	FromContext(ctx).InfoContext(ctx, msg, args...)
+	FromContext(ctx).DebugContext(ctx, msg, args...)
 }
 
 func Info(ctx context.Context, msg string, args ...any) {
